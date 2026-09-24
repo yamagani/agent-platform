@@ -1,0 +1,29 @@
+apiVersion: factory/v1
+kind: ChangeRequest
+metadata:
+  title: Add refund reconciliation report
+  requestedBy: ymadhu@icloud.com
+spec:
+  goal: >
+    Finance needs a weekly report reconciling refunds against the ledger so mismatches
+    surface automatically instead of being found during month-end close.
+  inScope:
+    - New report endpoint and query
+    - Scheduled weekly generation
+  outOfScope:
+    - Changes to the refund flow itself
+  acceptanceCriteria:
+    - id: AC1
+      given: a week with mismatched refunds
+      when: the report runs
+      then: each mismatch appears with refund id, ledger id and delta
+  constraints:
+    - Must not add a new datastore
+    - Must use the existing job scheduler
+  targetBranch: main
+  branchPrefix: factory/
+  testCommands:
+    unit: npm test
+  definitionOfDone:
+    - unit tests pass
+    - no new lint errors

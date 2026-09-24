@@ -1,0 +1,5 @@
+{
+  "package.json": "{ \"name\": \"sample-billing-service\", \"dependencies\": { \"express\": \"^4.19.0\" }, \"devDependencies\": { \"jest\": \"^29.0.0\" } }",
+  "README.md": "# sample-billing-service\n\nHandles refunds and ledger entries.\n",
+  ".factory/request.yaml": ""
+}
