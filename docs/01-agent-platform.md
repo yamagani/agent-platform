@@ -6,6 +6,10 @@ A single source of truth for AI-agent skills, instructions and prompts, distribu
 developer machines with version pinning and drift control, plus one governed knowledge
 endpoint so developers can ask internal questions from inside their agent.
 
+![Internal Agent Platform overview](diagrams/agent-platform-overview.png)
+
+![Internal Agent Platform end-to-end system architecture](diagrams/agent-platform-system-architecture.png)
+
 ---
 
 ## 1. Two planes, built separately
@@ -54,6 +58,23 @@ they disagree within weeks. Compile them (§5).
 **Context budget:** a skill's name and description load into every session for every
 installed skill — roughly 50–100 tokens each, permanently. A platform that installs 80
 skills on every machine has spent the budget before the developer types anything.
+
+**Releases.** The plugin repo is the source; a release is a build. CI on tag/merge-to-main
+compiles each changed plugin, validates schema and dependencies (§3), signs the result, and
+publishes the same bytes to two addresses: the CLI-resolvable registry (what `agents sync`
+pulls, §4) and a versioned, content-addressed object in
+`s3://agent-platform-releases/<plugin>/<version>/`. Headless consumers — the Spec-to-PR
+Factory, or any CI job — pull the S3 object directly and unpack it read-only; they never run
+the mutable sync pipeline, because they have no lockfile to drift, no developer-written file
+to avoid clobbering, and no machine to leave in a half-applied state. One build producing
+two addresses is what makes "the pin is recorded in the run record" mean anything: a version
+pinned in a factory run and a version pinned in a developer's `agents.lock` name identical,
+signed content, not two things that happen to share a version number. (See ADR 0009.)
+
+**Versioning.** Plugins version with semver. A breaking change is a major bump, and CI
+blocks the merge unless every declared `x-requires-agent` / `x-requires-mcp` consumer range
+across the marketplace still resolves against it — the same dependency-resolution gate from
+§3, run in the other direction.
 
 ---
 
@@ -136,6 +157,7 @@ own format. The adapter layer pays that cost once.
 | Kiro | `.kiro/steering/*.md` (`inclusion:`) | generated |
 | Cursor | `.cursor/rules/*.mdc` | generated |
 | Codex · Gemini | `AGENTS.md` root + nested | generated, managed block |
+| Headless (Factory, CI) | `.agents/` in the job workspace | unpacked read-only from the signed S3 release, not synced |
 
 Three traps already paid for by others: **Kiro CLI ignores `inclusion:`** and loads every
 steering file unconditionally, so keep emitted files small. **Codex caps combined AGENTS.md
@@ -250,3 +272,7 @@ raw third-party MCP servers outside the registry allowlist.
 - Confluence permission topology — mostly open, or heavily space-restricted. This changes
   the retrieval architecture more than any other input.
 - Who operates the gateway, and which system is authoritative for entitlement groups.
+- How the sync CLI itself obtains IdP claims to evaluate `x-requires-entitlement` on an
+  unmanaged developer machine — device-code OAuth against the org IdP, or a machine cert.
+  This decides whether entitlement checks can work offline, and it's unrelated to the
+  gateway's own OAuth, which authenticates tool calls, not the CLI's install-time check.

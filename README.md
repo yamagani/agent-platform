@@ -20,10 +20,16 @@ tool access; it pulls a pinned release from the platform like any other client.
 | `docs/02-spec-to-pr-factory.md` | Architecture for the AWS serverless spec-to-PR pipeline |
 | `docs/adr/` | Architecture decision records — the decisions that are settled and why |
 | `schemas/factory-request.schema.json` | The request format a customer repo supplies |
-| `docs/diagrams/` | Rendered architecture diagrams (PNG + PDF) |
+| `docs/diagrams/` | Architecture diagrams, embedded in the two docs above (platform: PNG + PDF; factory: SVG) |
+| `factory/` | Working Phase 1 implementation of the Spec-to-PR Factory (see `factory/README.md`) |
 
 ## Status
 
-Design stage. No implementation code in this repository yet. Every document here states
-its open questions at the end; those are the things that should be answered before the
-matching phase starts.
+Design stage for the Agent Platform (`docs/01-agent-platform.md`) — no code yet. The
+Spec-to-PR Factory has a working Phase 1 slice in `factory/`: intake → recon → analyst →
+Gate A → publisher, deployable as real AWS serverless infrastructure or runnable locally
+with no AWS account at all (`cd factory && npm install && npm run demo`). Everything past
+Phase 1 — the coder/tester loop, CodeBuild containment, the revision DAG, the full human-
+in-the-loop surface — is still design, not code; `factory/README.md` says exactly what's
+simplified and why. Every document here states its open questions at the end; those are
+the things that should be answered before the matching phase starts.

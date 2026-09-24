@@ -1,0 +1,231 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2040 980" role="img" aria-label="Spec-to-PR Factory end-to-end system architecture: a requirements spec becomes a reviewed pull request through pure-function stages over versioned artifacts, paused at three human gates, with generated code confined to a network-isolated CodeBuild project.">
+<title>Spec-to-PR Factory — end-to-end system architecture</title>
+<desc>Four lanes left to right: Trigger and Intake, Reasoning and Gates, Repo Execution, and State, Platform and Publish. A solid arrow spine runs webhook → intake → recon → analyst → Gate A → architect → Gate B → planner → factory-prepare → factory-execute (dotted red boundary: no network, no source token) → reviewer → publisher → Gate C. The fourth lane's artifact store and Agent Platform pull are cross-cutting infrastructure every stage in lanes one through three reads and writes. Two bottom bands state the containment rule and the reprocess/revision model.</desc>
+
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+  </marker>
+  <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+  </marker>
+</defs>
+
+<rect x="0" y="0" width="2040" height="980" fill="#ffffff"/>
+
+<!-- Title -->
+<text x="40" y="52" font-family="Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#111827">Spec-to-PR Factory — end-to-end system architecture</text>
+<text x="40" y="82" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#6b7280">A spec becomes a reviewed PR through pure-function stages over versioned artifacts, paused at three human gates, with generated code confined to a network-isolated project.</text>
+<line x1="40" y1="106" x2="2000" y2="106" stroke="#e5e7eb" stroke-width="1.5"/>
+
+<!-- Legend -->
+<g font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#374151">
+  <line x1="1560" y1="24" x2="1600" y2="24" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="1610" y="28">pipeline flow (artifact)</text>
+  <line x1="1560" y1="48" x2="1600" y2="48" stroke="#6b7280" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrowGray)"/>
+  <text x="1610" y="52">gate wait / cross-cutting pull</text>
+  <rect x="1560" y="62" width="40" height="14" fill="none" stroke="#b91c1c" stroke-width="2" stroke-dasharray="3,3"/>
+  <text x="1610" y="74">no-network execution boundary</text>
+</g>
+
+<!-- ================= COLUMN 1: TRIGGER & INTAKE ================= -->
+<rect x="40" y="140" width="460" height="30" fill="#4c1d95"/>
+<text x="54" y="161" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">1 · TRIGGER &amp; INTAKE</text>
+
+<!-- B1 webhook -->
+<rect x="40" y="170" width="460" height="34" fill="#4c1d95"/>
+<text x="54" y="192" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">GitHub webhook / manual start</text>
+<rect x="40" y="204" width="460" height="76" fill="#ffffff" stroke="#4c1d95" stroke-width="1.5"/>
+<text x="54" y="226" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="54" dy="0">Webhook -&gt; API Gateway -&gt; Lambda</tspan>
+  <tspan x="54" dy="20">HMAC verify X-Hub-Signature-256</tspan>
+  <tspan x="54" dy="20">(constant-time) · or started from UI</tspan>
+</text>
+
+<!-- B2 intake -->
+<rect x="40" y="298" width="460" height="34" fill="#4c1d95"/>
+<text x="54" y="320" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Intake · Lambda</text>
+<rect x="40" y="332" width="460" height="76" fill="#ffffff" stroke="#4c1d95" stroke-width="1.5"/>
+<text x="54" y="354" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="54" dy="0">validates .factory/request.yaml vs</tspan>
+  <tspan x="54" dy="20">factory-request.schema.json</tspan>
+  <tspan x="54" dy="20">-&gt; intake.json</tspan>
+</text>
+
+<!-- B3 recon -->
+<rect x="40" y="426" width="460" height="34" fill="#4c1d95"/>
+<text x="54" y="448" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Recon · CodeBuild (factory-prepare)</text>
+<rect x="40" y="460" width="460" height="96" fill="#ffffff" stroke="#4c1d95" stroke-width="1.5"/>
+<text x="54" y="482" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="54" dy="0">languages, frameworks, test cmds,</tspan>
+  <tspan x="54" dy="20">module map -&gt; repo-facts.json</tspan>
+  <tspan x="54" dy="20" font-weight="700" fill="#7f1d1d">UNTRUSTED: provenance-tagged for</tspan>
+  <tspan x="54" dy="20" font-weight="700" fill="#7f1d1d">every downstream reasoning stage</tspan>
+</text>
+
+<!-- intra-column arrows col1 -->
+<line x1="270" y1="280" x2="270" y2="296" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="270" y1="408" x2="270" y2="424" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- ================= COLUMN 2: REASONING & GATES ================= -->
+<rect x="540" y="140" width="460" height="30" fill="#0f766e"/>
+<text x="554" y="161" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">2 · REASONING &amp; GATES</text>
+
+<!-- B1 analyst -->
+<rect x="540" y="170" width="460" height="34" fill="#0f766e"/>
+<text x="554" y="192" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Analyst · Lambda</text>
+<rect x="540" y="204" width="460" height="56" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+<text x="554" y="226" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="554" dy="0">stories, AC, NFRs, open questions</tspan>
+  <tspan x="554" dy="20">-&gt; requirements.md / .json</tspan>
+</text>
+
+<!-- Gate A -->
+<rect x="540" y="274" width="460" height="30" fill="#14b8a6"/>
+<text x="554" y="294" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#ffffff">GATE A · .waitForTaskToken</text>
+<rect x="540" y="304" width="460" height="60" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="6,4"/>
+<text x="554" y="326" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#134e4a">
+  <tspan x="554" dy="0">user answers open questions;</tspan>
+  <tspan x="554" dy="20">reject -&gt; reprocess this stage only</tspan>
+</text>
+
+<!-- B2 architect -->
+<rect x="540" y="378" width="460" height="34" fill="#0f766e"/>
+<text x="554" y="400" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Architect · Lambda</text>
+<rect x="540" y="412" width="460" height="76" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+<text x="554" y="434" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="554" dy="0">components, data model, API</tspan>
+  <tspan x="554" dy="20">contracts, change plan, risks</tspan>
+  <tspan x="554" dy="20">-&gt; design.md / .json</tspan>
+</text>
+
+<!-- Gate B -->
+<rect x="540" y="502" width="460" height="30" fill="#14b8a6"/>
+<text x="554" y="522" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#ffffff">GATE B · .waitForTaskToken</text>
+<rect x="540" y="532" width="460" height="60" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="6,4"/>
+<text x="554" y="554" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#134e4a">
+  <tspan x="554" dy="0">last cheap moment to reject</tspan>
+  <tspan x="554" dy="20">heartbeat 14d -&gt; park + notify</tspan>
+</text>
+
+<!-- B3 planner -->
+<rect x="540" y="606" width="460" height="34" fill="#0f766e"/>
+<text x="554" y="628" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Planner · Lambda</text>
+<rect x="540" y="640" width="460" height="56" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+<text x="554" y="662" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="554" dy="0">-&gt; workplan.json: ordered items,</tspan>
+  <tspan x="554" dy="20">files touched, acceptance tests</tspan>
+</text>
+
+<!-- intra-column arrows col2 -->
+<line x1="770" y1="260" x2="770" y2="272" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="770" y1="364" x2="770" y2="376" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="770" y1="488" x2="770" y2="500" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="770" y1="592" x2="770" y2="604" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- col1 -> col2 spine -->
+<polyline points="500,508 520,508 520,232 538,232" fill="none" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- ================= COLUMN 3: REPO EXECUTION ================= -->
+<rect x="1040" y="140" width="460" height="30" fill="#1d4ed8"/>
+<text x="1054" y="161" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">3 · REPO EXECUTION</text>
+
+<!-- B1 factory-prepare -->
+<rect x="1040" y="170" width="460" height="34" fill="#1d4ed8"/>
+<text x="1054" y="192" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">factory-prepare · egress allowed</text>
+<rect x="1040" y="204" width="460" height="76" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1054" y="226" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="1054" dy="0">clone w/ short-lived install token,</tspan>
+  <tspan x="1054" dy="20">scrub token before dependency install</tspan>
+  <tspan x="1054" dy="20">-&gt; workspace tarball to S3</tspan>
+</text>
+
+<!-- B2 factory-execute (no-network) -->
+<rect x="1040" y="298" width="460" height="34" fill="#7f1d1d"/>
+<text x="1054" y="320" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">factory-execute · VPC, no NAT/IGW</text>
+<rect x="1040" y="332" width="460" height="116" fill="#fff5f5" stroke="#b91c1c" stroke-width="2" stroke-dasharray="6,4"/>
+<text x="1054" y="354" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#7f1d1d">
+  <tspan x="1054" dy="0" font-weight="700">NO EGRESS · NO SOURCE TOKEN</tspan>
+  <tspan x="1054" dy="20">coder -&gt; unit test -&gt; func test loop,</tspan>
+  <tspan x="1054" dy="20">capped 3 attempts/item, one job</tspan>
+  <tspan x="1054" dy="20">exhausted -&gt; structured fail, parks</tspan>
+  <tspan x="1054" dy="20">write-only to its own S3 prefix</tspan>
+</text>
+
+<!-- B3 reviewer -->
+<rect x="1040" y="466" width="460" height="34" fill="#1d4ed8"/>
+<text x="1054" y="488" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Reviewer · Lambda</text>
+<rect x="1040" y="500" width="460" height="56" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1054" y="522" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="1054" dy="0">diff vs approved design + org</tspan>
+  <tspan x="1054" dy="20">standards -&gt; review.md</tspan>
+</text>
+
+<!-- intra-column arrows col3 -->
+<line x1="1270" y1="280" x2="1270" y2="296" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1270" y1="448" x2="1270" y2="464" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- col2 -> col3 spine -->
+<polyline points="1000,668 1020,668 1020,232 1038,232" fill="none" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- ================= COLUMN 4: STATE, PLATFORM & PUBLISH ================= -->
+<rect x="1540" y="140" width="460" height="30" fill="#9d174d"/>
+<text x="1554" y="161" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">4 · STATE, PLATFORM &amp; PUBLISH</text>
+
+<!-- Bt1 artifact store (cross-cutting) -->
+<rect x="1540" y="170" width="460" height="34" fill="#9d174d"/>
+<text x="1554" y="192" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Artifact store · S3, versioned</text>
+<rect x="1540" y="204" width="460" height="76" fill="#ffffff" stroke="#9d174d" stroke-width="1.5"/>
+<text x="1554" y="226" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="1554" dy="0">runs/&lt;runId&gt;/&lt;rev&gt;/&lt;stage&gt;/&lt;artifact&gt;</tspan>
+  <tspan x="1554" dy="20">content-hashed; reused = pointer</tspan>
+  <tspan x="1554" dy="20">EventBridge: stage/gate transitions</tspan>
+</text>
+
+<!-- Bt2 platform pull (cross-cutting) -->
+<rect x="1540" y="298" width="460" height="34" fill="#9d174d"/>
+<text x="1554" y="320" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Agent Platform pull · per stage</text>
+<rect x="1540" y="332" width="460" height="76" fill="#ffffff" stroke="#9d174d" stroke-width="1.5"/>
+<text x="1554" y="354" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="1554" dy="0">pinned, signed skill-pack (ADR 0009)</tspan>
+  <tspan x="1554" dy="20">MCP gateway: machine identity,</tspan>
+  <tspan x="1554" dy="20">tool allowlist scoped per stage</tspan>
+</text>
+
+<!-- Bb1 publisher -->
+<rect x="1540" y="438" width="460" height="34" fill="#9d174d"/>
+<text x="1554" y="460" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Publisher · Lambda</text>
+<rect x="1540" y="472" width="460" height="96" fill="#ffffff" stroke="#9d174d" stroke-width="1.5"/>
+<text x="1554" y="494" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#1f2937">
+  <tspan x="1554" dy="0">mints fresh install token at push</tspan>
+  <tspan x="1554" dy="20">idempotent: checks branch/PR for</tspan>
+  <tspan x="1554" dy="20">&lt;runId&gt;/&lt;revision&gt; before creating</tspan>
+  <tspan x="1554" dy="20">-&gt; branch + PR, links full lineage</tspan>
+</text>
+
+<!-- Gate C -->
+<rect x="1540" y="582" width="460" height="30" fill="#db2777"/>
+<text x="1554" y="602" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#ffffff">GATE C · pre-push (default off)</text>
+<rect x="1540" y="612" width="460" height="60" fill="#fdf2f8" stroke="#9d174d" stroke-width="1.5" stroke-dasharray="6,4"/>
+<text x="1554" y="634" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#831843">
+  <tspan x="1554" dy="0">off by default: the PR is itself</tspan>
+  <tspan x="1554" dy="20">a review gate</tspan>
+</text>
+
+<!-- col3 -> col4 spine (reviewer -> publisher) -->
+<polyline points="1500,528 1520,528 1520,455 1538,455" fill="none" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="1770" y1="568" x2="1770" y2="580" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+
+<!-- ================= BOTTOM BANDS ================= -->
+<rect x="40" y="726" width="1960" height="86" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1"/>
+<text x="60" y="750" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#111827">CONTAINMENT RULE</text>
+<text x="60" y="774" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#374151">Reasoning stages hold no push credential. factory-execute holds no source token and reaches no network. The publisher</text>
+<text x="60" y="796" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#374151">pushes only a diff a tester ran and a reviewer already checked against an approved design.</text>
+
+<rect x="40" y="826" width="1960" height="86" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1"/>
+<text x="60" y="850" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#111827">RUN LINEAGE / REPROCESS</text>
+<text x="60" y="874" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#374151">Reprocess = a new revision starting at one stage, referencing the prior revision's earlier artifacts by pointer, not copy.</text>
+<text x="60" y="896" font-family="Menlo, Consolas, monospace" font-size="13.5" fill="#374151">The prior revision is marked SUPERSEDED_AT_STAGE and stays fully readable — the artifact store is append-only.</text>
+
+</svg>

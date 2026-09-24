@@ -22,3 +22,15 @@ boundary: generated code never executes anywhere that can reach the network or p
 ## Consequences
 Dependency installation and test execution are separate phases with separate roles, which
 costs one artifact handoff and buys the main security property of the system.
+
+`factory-prepare` still has a narrower problem even with the two-project split: it holds a
+push-capable GitHub token *and* it runs dependency installation, which executes
+repo-authored code (npm/pip postinstall hooks, setup.py, build scripts). An "egress allowed
+to package registries" network policy does not close this — the standard exfiltration
+pattern publishes the token to the very registry that's allowlisted, as a matter of course.
+The mitigation is credential hygiene, not network policy: the buildspec fetches the
+installation token only for the `git clone` phase, via a short-lived credential helper, then
+explicitly scrubs it — process environment, `.git-credentials`, git config — before the
+install phase runs. No repo-authored code ever executes while the token is reachable in the
+same process tree. Blast radius is bounded further by the token itself: GitHub App
+installation tokens are repo-scoped and expire in about an hour regardless.

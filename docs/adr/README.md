@@ -13,3 +13,4 @@ preference.
 | [0006](0006-agents-communicate-through-artifacts.md) | Agents communicate through artifacts, not conversation | Factory |
 | [0007](0007-step-functions-standard-and-explicit-reprocess.md) | Step Functions Standard; reprocess as a new revision | Factory |
 | [0008](0008-codebuild-for-repo-stages-two-projects.md) | CodeBuild for repo stages, split into two projects | Factory |
+| [0009](0009-one-release-pipeline-feeds-cli-and-headless-consumers.md) | One release pipeline feeds both the CLI and headless consumers | Platform |

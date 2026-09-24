@@ -8,6 +8,8 @@ that design approved, then generates code, unit-tests it, functionally tests it,
 pushes a branch with a pull request. Each agent runs in its own isolated context, one
 after another. Any stage can be reprocessed by the user without rerunning the whole run.
 
+![Spec-to-PR Factory end-to-end system architecture](diagrams/spec-to-pr-factory-system-architecture.svg)
+
 ---
 
 ## 1. The one rule that shapes everything else
@@ -143,6 +145,16 @@ the job.
 
 Generated code never executes in a container that can reach the network or hold a token
 that can push. That separation is the main containment mechanism in the design.
+
+**`factory-prepare`'s own credential hygiene matters just as much as the split.** It holds a
+push-capable GitHub token *and* it runs dependency installation, which executes
+repo-authored code (postinstall hooks, `setup.py`, build scripts). An egress allowlist to
+"legitimate" package registries does not stop token exfiltration — the standard pattern
+publishes the secret to the very registry that's allowed. The buildspec therefore fetches
+the installation token only for the `git clone` step, through a short-lived credential
+helper, and scrubs it — environment, `.git-credentials`, git config — before the install
+phase starts. No repo-authored code runs while the token is reachable in the same process
+tree. (See ADR 0008.)
 
 ---
 
@@ -294,12 +306,17 @@ approve, reject with note (→ reprocess this stage), or park.
 ## 10. GitHub integration
 
 - **GitHub App**, not a PAT. Installation tokens are short-lived and scoped per repository;
-  a PAT on a code-writing system is an unnecessary standing risk.
+  a PAT on a code-writing system is an unnecessary standing risk. Because gates can hold a
+  run open for days (§9), no stage caches a token past its own execution — the publisher
+  mints a fresh installation token at push time, never reuses one fetched at intake.
 - **Webhook** → API Gateway → Lambda, verifying `X-Hub-Signature-256` with a constant-time
   comparison before any processing. A run can also be started from the UI.
 - **Push and PR** happen only in the publisher stage, from a fixed template. The branch name
   is derived from the run id; the LLM never chooses the push target. The PR body links the
   requirements artifact, the approved design, the test reports and the run record.
+- **Publisher is idempotent.** Before creating anything, it looks up an existing branch or
+  PR named from `<runId>/<revision>`. A retried publish (Step Functions retry, a redrive
+  after a throttle) updates that branch and PR rather than opening a duplicate.
 
 ---
 
@@ -312,6 +329,11 @@ content it has not already been approved against.* Concretely — the analyst an
 read the repo but cannot push; the publisher pushes but only a diff that a tester produced
 and a reviewer checked against an approved design.
 
+- `repo-facts.json` and any repo file content quoted into a prompt are **untrusted data**,
+  the same as knowledge-service results in `01-agent-platform.md` §6: delimited, tagged with
+  provenance, and never treated as instructions. Recon's own output is repo-derived — a
+  malicious README or config can plant a "convention" aimed at the architect or coder, not
+  just the analyst reading the spec.
 - Generated code runs in `factory-execute` with no network egress and a role limited to one
   S3 prefix.
 - Secrets in Secrets Manager (GitHub App private key, provider API keys) with rotation;
